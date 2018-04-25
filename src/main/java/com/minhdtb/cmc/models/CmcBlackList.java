@@ -3,7 +3,7 @@ package com.minhdtb.cmc.models;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "cmc_raw_data")
+@Table(name = "cmc_black_list")
 @NamedQueries({
         @NamedQuery(name = "CmcBlackList.findAll", query = "SELECT m FROM CmcBlackList m"),
         @NamedQuery(name = "CmcBlackList.findById", query = "SELECT m FROM CmcBlackList m WHERE m.id = :id"),
