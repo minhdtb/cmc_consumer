@@ -1,11 +1,11 @@
 package com.minhdtb.cmc;
 
 import com.google.gson.Gson;
+import com.minhdtb.cmc.models.CmcBlackList;
 import com.minhdtb.cmc.models.CmcRawData;
 import com.rabbitmq.client.*;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -22,7 +23,8 @@ import java.util.Properties;
 
 public class Main {
     private static final String QUEUE_NAME = "message";
-    private static final String MQTT_TOPIC_NAME = "message";
+    private static final String MQTT_TOPIC_MESSAGE = "message";
+    private static final String MQTT_TOPIC_BLACK_LIST = "blacklist";
     private static final String MQTT_HOST = "wss://mqtt.esminer.com:8083";
     private static final String MQTT_CLIENT_ID = "consumer";
 
@@ -82,11 +84,21 @@ public class Main {
 
                     MqttMessage mqttMessage = new MqttMessage(message.getBytes());
                     mqttMessage.setQos(2);
+
                     try {
                         logger.info("Sending message...");
-                        mqttClient.publish(MQTT_TOPIC_NAME, mqttMessage);
+                        mqttClient.publish(MQTT_TOPIC_MESSAGE, mqttMessage);
                         logger.info("Sent.");
-                    } catch (MqttException e) {
+
+                        TypedQuery<CmcBlackList> query = entityManager.createNamedQuery("CmcBlackList.findByRemoteHost", CmcBlackList.class);
+                        query.setParameter("remoteHost", rawData.getRemoteHost());
+                        CmcBlackList cmcBlackList = query.getSingleResult();
+                        if (cmcBlackList != null) {
+                            logger.info("Sending black list...");
+                            mqttClient.publish(MQTT_TOPIC_BLACK_LIST, mqttMessage);
+                            logger.info("Sent.");
+                        }
+                    } catch (Exception e) {
                         logger.error("error", e);
                     }
 
