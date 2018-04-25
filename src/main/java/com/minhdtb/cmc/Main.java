@@ -98,6 +98,8 @@ public class Main {
                             mqttClient.publish(MQTT_TOPIC_BLACK_LIST, mqttMessage);
                             logger.info("Sent.");
                         }
+                    } catch (javax.persistence.NoResultException ignored) {
+
                     } catch (Exception e) {
                         logger.error("error", e);
                     }
